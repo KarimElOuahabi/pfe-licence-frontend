@@ -33,21 +33,28 @@ export const SideMenu = () => {
   const items: MenuItem[] = Object.values(ROUTES)
     .filter((value) => value.path !== "/login")
     .map((value) =>
-      getItem(value.label, value.path, <UserOutlined />, value?.children)
+      getItem(
+        value.label,
+        value.path,
+        <UserOutlined />,
+        value.children?.map((child) =>
+          getItem(child.label, child.path)
+        )
+      )
     );
 
   return (
     <Sider
+      className="side-menu"
       collapsible
       collapsed={collapsed}
       onCollapse={(value) => setCollapsed(value)}
     >
       <Menu
         theme="dark"
-        defaultSelectedKeys={["1"]}
         mode="inline"
         items={items}
-        onClick={(route) => handleClick(route.key)}
+        onClick={({ key }) => handleClick(key)}
       />
     </Sider>
   );

@@ -1,8 +1,10 @@
-// import { useNavigate } from "react-router-dom";
-
-import { TableColumnsType, Tag } from "antd";
+import React, { useEffect, useState } from "react";
+import { TableColumnsType, Tag, Button, message, Popconfirm } from "antd";
 import DataTable from "../../../Components/Common/DataTable";
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
+import { API } from "../../../apis";
+import dayjs from "dayjs";
+import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
 export interface Assignment {
   id: number;
@@ -11,23 +13,51 @@ export interface Assignment {
   submittedAt: string;
   updatedAt: string;
   status: string;
-  link: string;
   subject: string;
   dueDate: string;
 }
 
+type UserType = "Student" | "Professor";
+
 export const Assignments = () => {
-  // const navigate = useNavigate();
-  const handleEdit = (id: number) => {
-    // navigate(`/reclamations/${id}`);
+  const navigate = useNavigate();
+  const [data, setData] = useState<Assignment[]>([]);
+
+  useEffect(() => {
+    const fetchAssignments = async () => {
+      try {
+        const assignments = await API.getList("assignments");
+        console.log("API returned assignments:", assignments);
+        setData(assignments);
+      } catch (error) {
+        console.error("Failed to fetch assignments:", error);
+        message.error("Could not load assignments.");
+      }
+    };
+
+    fetchAssignments();
+  }, []);
+
+  const handleRemove = async (id: number) => {
+    try {
+      await API.remove("assignments", id);
+      setData((prev) => prev.filter((item) => item.id !== id));
+      message.success("Assignment deleted successfully.");
+    } catch (error) {
+      console.error("Delete failed:", error);
+      message.error("Failed to delete assignment.");
+    }
+  };
+
+  const handleUpdate = (id: number) => {
+    navigate(`/assignments/edit/${id}`);
   };
 
   const columns: TableColumnsType<Assignment> = [
     { title: "Title", dataIndex: "title", key: "title" },
     { title: "Description", dataIndex: "description", key: "description" },
     { title: "Subject", dataIndex: "subject", key: "subject" },
-    { title: "Link", dataIndex: "link", key: "link" },
-    { title: "DueDate", dataIndex: "dueDate", key: "dueDate" },
+    { title: "Due Date", dataIndex: "dueDate", key: "dueDate" },
     {
       title: "Status",
       dataIndex: "status",
@@ -36,48 +66,88 @@ export const Assignments = () => {
         <Tag color={status === "Pending" ? "red" : "green"}>{status}</Tag>
       ),
     },
-    { title: "UpdatedAt", dataIndex: "updatedAt", key: "updatedAt" },
-    { title: "SubmittedAt", dataIndex: "submittedAt", key: "submittedAt" },
     {
-      title: "",
-      dataIndex: "",
-      key: "x",
-      render: () => <EditOutlined style={{ cursor: "pointer" }} />,
+      title: "Updated At",
+      dataIndex: "updatedAt",
+      key: "updatedAt",
+      render: (value) => dayjs(value).format("YYYY-MM-DD HH:mm"),
+    },
+    {
+      title: "Submitted At",
+      dataIndex: "submittedAt",
+      key: "submittedAt",
+      render: (value) => dayjs(value).format("YYYY-MM-DD HH:mm"),
     },
     {
       title: "",
-      dataIndex: "",
-      key: "y",
-      render: () => (
-        <DeleteOutlined style={{ cursor: "pointer", color: "red" }} />
+      key: "edit",
+      render: (_, record) => (
+        <EditOutlined
+          style={{ cursor: "pointer" }}
+          onClick={() => handleUpdate(record.id)}
+        />
+      ),
+    },
+    {
+      title: "",
+      key: "delete",
+      render: (_, record) => (
+        <Popconfirm
+          title="Would like to delete this assignment ?"
+          onConfirm={() => handleRemove(record.id)}
+          okText="Yes"
+          cancelText="No"
+        >
+          <DeleteOutlined style={{ cursor: "pointer", color: "red" }} />
+        </Popconfirm>
       ),
     },
   ];
 
-  const data: Assignment[] = [
-    {
-      id: 1,
-      title: "Assignment 1",
-      description: "Description 1",
-      submittedAt: "2023-01-01",
-      updatedAt: "2023-01-02",
-      status: "Pending",
-      link: "http://example.com/assignment1",
-      subject: "Math",
-      dueDate: "2023-01-10",
-    },
-    {
-      id: 2,
-      title: "Assignment 2",
-      description: "Description 2",
-      submittedAt: "2023-01-03",
-      updatedAt: "2023-01-04",
-      status: "Resolved",
-      link: "http://example.com/assignment2",
-      subject: "Science",
-      dueDate: "2023-01-15",
-    },
-  ];
+  const StudentAssignmentList = (
+    <DataTable
+      columns={[
+        ...columns.filter((col) => col.key !== "edit" && col.key !== "delete"),
+        {
+          title: "Open",
+          key: "open",
+          render: (_, record) => (
+            <Button
+              type="link"
+              onClick={() => navigate(`/assignments/view/${record.id}`)}
+              style={{ padding: 0 }}
+            >
+              &gt;|
+            </Button>
+          ),
+        },
+      ]}
+      data={data}
+      expandable={{}}
+    />
+  );
 
-  return <DataTable columns={columns} data={data} />;
+  const ProfessorAssignmentList = (
+    <DataTable
+      columns={[...columns]}
+      data={data}
+      expandable={{}}
+      showButton={true}
+      onAddButtonClick={() => navigate("/assignments/create")}
+      addButtonLabel="+ Add Assignment"
+    />
+  );
+
+  const usersDisplay = (userType: UserType) => {
+    switch (userType) {
+      case "Student":
+        return StudentAssignmentList;
+      case "Professor":
+        return ProfessorAssignmentList;
+      default:
+        return <div>Unknown user type</div>;
+    }
+  };
+
+  return usersDisplay("Student"); // Change to "Student" or "Professor" as needed
 };

@@ -1,64 +1,150 @@
-// import { useNavigate } from "react-router-dom";
-
-import { TableColumnsType } from "antd";
-import DataTable from "../../../Components/Common/DataTable";
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import type { TableColumnsType } from "antd";
+import { Popconfirm } from "antd";
+import { useEffect, useState } from "react";
+import dayjs from "dayjs";
+import { useNavigate } from "react-router-dom";
+import DataTable from "../../../Components/Common/DataTable";
+import { UserType } from "../../../Components/types/UserType";
+import { API } from "../../../apis";
 
 export interface Reclamation {
   id: number;
   title: string;
   description: string;
-  submittedAt: string;
-  updatedAt: string;
+  submittedAt: Date;
+  updatedAt: Date;
   status: string;
 }
 
+export const formatDate = (date: Date): string => {
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(date));
+};
+
 export const Reclamations = () => {
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
+
+  const [data, setData] = useState<Reclamation[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const reclamations = await API.getList("reclamations");
+        setData(reclamations);
+      } catch (error) {
+        console.error("Failed to fetch reclamations:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleAddNew = () => {
+    navigate("create");
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      const response = await API.remove("reclamations", id);
+      if (response) {
+        setData((prevData) => prevData.filter((item) => item.id !== id));
+      }
+    } catch (error) {
+      console.error("Failed to delete:", error);
+    }
+  };
+
   const handleEdit = (id: number) => {
-    // navigate(`/reclamations/${id}`);
+    navigate("edit/" + id);
   };
 
   const columns: TableColumnsType<Reclamation> = [
     { title: "Title", dataIndex: "title", key: "title" },
-    { title: "Description", dataIndex: "description", key: "description" },
-    { title: "SubmittedAt", dataIndex: "submittedAt", key: "submittedAt" },
-    { title: "UpdatedAt", dataIndex: "updatedAt", key: "updatedAt" },
+    {
+      title: "Updated At",
+      dataIndex: "updatedAt",
+      key: "updatedAt",
+      render: (value) => dayjs(value).format("YYYY-MM-DD HH:mm"),
+    },
+    {
+      title: "Submitted At",
+      dataIndex: "submittedAt",
+      key: "submittedAt",
+      render: (value) => dayjs(value).format("YYYY-MM-DD HH:mm"),
+    },
     { title: "Status", dataIndex: "status", key: "status" },
     {
       title: "",
-      dataIndex: "",
-      key: "x",
-      render: () => <EditOutlined style={{ cursor: "pointer" }} />,
+      key: "edit",
+      render: (_, record) => (
+        <EditOutlined
+          style={{ cursor: "pointer" }}
+          onClick={() => handleEdit(record.id)}
+        />
+      ),
     },
     {
       title: "",
-      dataIndex: "",
-      key: "y",
-      render: () => (
-        <DeleteOutlined style={{ cursor: "pointer", color: "red" }} />
+      key: "delete",
+      render: (_, record) => (
+        <Popconfirm
+          title="Supprimer cette réclamation ?"
+          onConfirm={() => handleDelete(record.id)}
+          okText="Oui"
+          cancelText="Non"
+        >
+          <DeleteOutlined style={{ cursor: "pointer", color: "red" }} />
+        </Popconfirm>
       ),
     },
   ];
 
-  const data: Reclamation[] = [
-    {
-      id: 1,
-      title: "Reclamation 1",
-      description: "Description 1",
-      submittedAt: "2023-01-01",
-      updatedAt: "2023-01-02",
-      status: "Pending",
-    },
-    {
-      id: 2,
-      title: "Reclamation 2",
-      description: "Description 2",
-      submittedAt: "2023-01-03",
-      updatedAt: "2023-01-04",
-      status: "Resolved",
-    },
-  ];
+  const expandedRowRender = (record: Reclamation) => (
+    <div style={{ margin: 0 }}>
+      <strong>Description :</strong>
+      <p>{record.description}</p>
+    </div>
+  );
 
-  return <DataTable columns={columns} data={data} />;
+  const usersDisplay = (userType: UserType) => {
+    switch (userType) {
+      case "Student":
+        return StudentReclamationsList;
+      case "Professor":
+        return ProfessorReclamationList;
+      case "Admin":
+        return AdminReclamationList;
+      default:
+        return <div>Unknown user type</div>;
+    }
+  };
+
+  const StudentReclamationsList = (
+    <DataTable
+      columns={columns}
+      data={data}
+      expandable={{ expandedRowRender }}
+      showButton={true}
+      onAddButtonClick={() => handleAddNew()}
+      addButtonLabel="+ Add Reclamation"
+    />
+  );
+
+  const ProfessorReclamationList = (
+    <DataTable
+      columns={columns}
+      data={data}
+      expandable={{ expandedRowRender }}
+    />
+  );
+
+  const AdminReclamationList = <>ADMIN LIST</>;
+
+  return usersDisplay("Student");
 };
