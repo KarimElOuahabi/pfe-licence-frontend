@@ -14,7 +14,7 @@ const DataTable = ({
   expandable?: any; // the expandable logic to pass in from parent
   showButton?: boolean; // optional prop to show button
   onAddButtonClick?: () => void;
-  addButtonLabel?: string; // optional prop for button label
+  addButtonLabel?: React.ReactNode; // optional prop for button label
 }) => (
   <div>
     <div

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Row, Col, Card, List, Typography, Button, Space } from "antd";
-import { TodoList } from "../TodoList";
-import { scheduleData } from "../Schedule";
+//import { scheduleData } from "../Schedule/AdminAddSche";
 import { CustomCalendar } from "./CustomCalendar";
 
 const { Title } = Typography;
@@ -35,11 +34,11 @@ export const Home: React.FC = () => {
     );
   };
 
-  const scheduleToday = selectedSemesters.flatMap(
-    (semester) =>
-      scheduleData[semester]?.filter((session) => session.day === currentDay) ||
-      []
-  );
+  // const scheduleToday = selectedSemesters.flatMap(
+  //   (semester) =>
+  //     scheduleData[semester]?.filter((session) => session.day === currentDay) ||
+  //     []
+  // );
 
   return (
     <div style={{ padding: 24 }}>
@@ -50,11 +49,6 @@ export const Home: React.FC = () => {
             <Col span={24}>
               <Card title="Calendar">
                 <CustomCalendar />
-              </Card>
-            </Col>
-            <Col span={24}>
-              <Card title="To-Do List">
-                <TodoList />
               </Card>
             </Col>
           </Row>
@@ -98,7 +92,7 @@ export const Home: React.FC = () => {
                   </Space>
                 }
               >
-                <List
+                {/* <List
                   dataSource={scheduleToday}
                   renderItem={(item) => (
                     <List.Item>
@@ -108,7 +102,7 @@ export const Home: React.FC = () => {
                       />
                     </List.Item>
                   )}
-                />
+                /> */}
               </Card>
             </Col>
             <Col span={24}>

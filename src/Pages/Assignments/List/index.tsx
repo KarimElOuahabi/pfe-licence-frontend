@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { TableColumnsType, Tag, Button, message, Popconfirm } from "antd";
-import DataTable from "../../../Components/Common/DataTable";
+import { DeleteOutlined, EditOutlined, EyeOutlined } from "@ant-design/icons";
+import { Button, message, Popconfirm, TableColumnsType } from "antd";
+import dayjs from "dayjs";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API } from "../../../apis";
-import dayjs from "dayjs";
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import DataTable from "../../../Components/Common/DataTable";
+import { UserType } from "../../../types/UserType";
+import { useUserSettings } from "../../../hooks";
 
 export interface Assignment {
   id: number;
@@ -17,20 +19,17 @@ export interface Assignment {
   dueDate: string;
 }
 
-type UserType = "Student" | "Professor";
-
 export const Assignments = () => {
   const navigate = useNavigate();
+  const { userType } = useUserSettings();
   const [data, setData] = useState<Assignment[]>([]);
 
   useEffect(() => {
     const fetchAssignments = async () => {
       try {
         const assignments = await API.getList("assignments");
-        console.log("API returned assignments:", assignments);
         setData(assignments);
       } catch (error) {
-        console.error("Failed to fetch assignments:", error);
         message.error("Could not load assignments.");
       }
     };
@@ -56,16 +55,13 @@ export const Assignments = () => {
   const columns: TableColumnsType<Assignment> = [
     { title: "Title", dataIndex: "title", key: "title" },
     { title: "Description", dataIndex: "description", key: "description" },
-    { title: "Subject", dataIndex: "subject", key: "subject" },
-    { title: "Due Date", dataIndex: "dueDate", key: "dueDate" },
     {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status) => (
-        <Tag color={status === "Pending" ? "red" : "green"}>{status}</Tag>
-      ),
+      title: "Subject",
+      dataIndex: "subject",
+      key: "subject",
+      render: (subject) => <>{subject.name}</>,
     },
+    { title: "Due Date", dataIndex: "dueDate", key: "dueDate" },
     {
       title: "Updated At",
       dataIndex: "updatedAt",
@@ -117,7 +113,7 @@ export const Assignments = () => {
               onClick={() => navigate(`/assignments/view/${record.id}`)}
               style={{ padding: 0 }}
             >
-              &gt;|
+              <EyeOutlined />
             </Button>
           ),
         },
@@ -142,12 +138,12 @@ export const Assignments = () => {
     switch (userType) {
       case "Student":
         return StudentAssignmentList;
-      case "Professor":
+      case "Teacher":
         return ProfessorAssignmentList;
       default:
         return <div>Unknown user type</div>;
     }
   };
 
-  return usersDisplay("Student"); // Change to "Student" or "Professor" as needed
+  return usersDisplay(userType);
 };

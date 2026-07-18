@@ -48,9 +48,13 @@ const remove = async (url: string, id: number): Promise<number> => {
   }
 };
 
-const getList = async (url: string): Promise<any> => {
+const getList = async (url: string, param?: string | number): Promise<any> => {
   try {
-    const result = await fetch(`http://localhost:8080/${url}`, {
+    let basicUrl = `http://localhost:8080/${url}`;
+    if (param) {
+      basicUrl += `/${param}`;
+    }
+    const result = await fetch(basicUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -76,6 +80,22 @@ const getOne = async (url: string, id: number): Promise<any> => {
     return data;
   } catch (error) {
     console.error(`"Error listing data by Id for ${url}"`, error);
+    throw error;
+  }
+};
+
+const getOneWithMultipleIds = async (customUrl: string): Promise<any> => {
+  try {
+    const result = await fetch(`http://localhost:8080/${customUrl}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const data = await result.json();
+    return data;
+  } catch (error) {
+    console.error(`"Error listing data by Id for ${customUrl}"`, error);
     throw error;
   }
 };
@@ -123,6 +143,7 @@ export const API = {
   remove,
   getList,
   getOne,
+  getOneWithMultipleIds,
   createWithFile,
-  updateWithFile
+  updateWithFile,
 };
